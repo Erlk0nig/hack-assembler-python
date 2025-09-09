@@ -47,16 +47,38 @@ class Parser:
         # Get the jump field of the instruction
         return instruction.split(";")[1]
 
+class Code:
+    def dest(field):
+        # Translate the destination field of the instruction
+        match field:
+            case "":
+                return "000"
+            case "M":
+                return "001"
+            case "D":
+                return "010"
+            case "DM":
+                return "011"
+            case "A":
+                return "100"
+            case "AM":
+                return "101"
+            case "AD":
+                return "110"
+            case "ADM":
+                return "111"
     
+    
+
 
 path = Path(argv[1])
 parser = Parser(path)
 instructions = parser.initializer()
 print(instructions)
-
 for instruction in instructions:
     if parser.instruction_type(instruction) == "C-instruction":
-        print(parser.comp(instruction))
+        dest = parser.dest(instruction)
+        print (Code.dest(dest))
 
 
 

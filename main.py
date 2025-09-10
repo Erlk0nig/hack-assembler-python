@@ -37,27 +37,37 @@ class Parser:
         
     def dest(self,instruction):
         # Get the destination field of the instruction
+        if len(instruction.split("=")) < 2:
+            return ""
         return instruction.split("=")[0]
 
     def comp(self,instruction):
         # Get the computation field of the instruction
+        if len(instruction.split("=")) < 2:
+            return instruction.split(";")[0]
         return instruction.split("=")[1].split(";")[0]
     
     def jump(self,instruction):
         # Get the jump field of the instruction
+        if len(instruction.split(";")) < 2:
+            return ""
         return instruction.split(";")[1]
 
 class Code:
-    def dest(field):
+    def __init__(self,dest_field,comp_field,jump_field):
+        self.dest_field = dest_field
+        self.comp_field = comp_field
+        self.jump_field = jump_field
+    def dest(self):
         # Translate the destination field of the instruction
-        match field:
+        match self.dest_field:
             case "":
                 return "000"
             case "M":
                 return "001"
             case "D":
                 return "010"
-            case "DM":
+            case "MD":
                 return "011"
             case "A":
                 return "100"
@@ -68,9 +78,9 @@ class Code:
             case "ADM":
                 return "111"
     
-    def comp(field):
+    def comp(self):
             # Translate the computation field of the instruction 
-            match field:
+            match self.comp_field:
                 case "0":
                     return "0101010"
                 case "1":
@@ -128,8 +138,8 @@ class Code:
                 case "D|M":
                     return "1010101"    
                 
-    def jump(field):
-        match field:
+    def jump(self):
+        match self.jump_field:
             # Translate the jump field of the instruction 
             case "":
                 return "000"
@@ -148,15 +158,36 @@ class Code:
             case "JMP":
                 return "111"
 
-
+# Select file to translate and store instructions
 path = Path(argv[1])
 parser = Parser(path)
 instructions = parser.initializer()
-print(instructions)
+# iterate over instructions
 for instruction in instructions:
+    # Split C-instruction into subfields and translate each subfield
     if parser.instruction_type(instruction) == "C-instruction":
         dest = parser.dest(instruction)
-        print (Code.dest(dest))
+        comp = parser.comp(instruction)
+        jump = parser.jump(instruction)
+        code = Code(dest,comp,jump)
+        translated_dest = code.dest()
+        translated_comp = code.comp()
+        translated_jump = code.jump()
+        # Assemble translated subfields
+        translated_instruction = "111" + translated_comp + translated_dest + translated_jump
+    if parser.instruction_type(instruction) == "A-instruction":
+        # Translate each A-instruction into its binary value
+        integer = instruction.split('@')[1]
+        binary_representation = f'{int(integer):015b}'
+        translated_instruction = "0" + binary_representation
+
+    # Select file to store binary output
+    with Path(argv[2]).open(mode="a", encoding="utf-8") as file:
+        file.write(f"{translated_instruction}\n")
+
+    
+
+
 
 
 

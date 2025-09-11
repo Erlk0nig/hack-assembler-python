@@ -13,8 +13,8 @@ class Parser:
             # Remove newlines and comments
             for line in file.readlines():
                 if line != "\n":
+                    line = line.strip()
                     if line[0] + line [1] != "//":
-                        line = line.rstrip()
                         instructions.append(line)
             return instructions
     
@@ -22,7 +22,13 @@ class Parser:
         # Check if there are more instructions in the file
         if instruction_count < len(instructions):
             return True
-        
+    def symbol(self,instruction_type):
+        # Return the symbols of A-instructions and Labels
+        if instruction_type == "L-instruction":
+            return instruction.replace('(','').replace(')','')
+        elif instruction_type == "A-instruction":
+            return instruction.replace('@','')
+            
     def advance(self,instruction_count):
         # Fetch the next instruction
         if self.has_more_lines() is True:
@@ -32,6 +38,8 @@ class Parser:
     def instruction_type(self,instruction):
         if instruction[0] == '@':
             return "A-instruction"
+        elif instruction[0] + instruction[-1] == "()":
+            return "L-instruction"
         else:
             return "C-instruction"
         
@@ -201,6 +209,10 @@ parser = Parser(path)
 instructions = parser.initializer()
 # iterate over instructions
 for instruction in instructions:
+    instruction_type = parser.instruction_type(instruction)
+    print(instruction)
+    print(parser.symbol(instruction_type))
+'''
     # Split C-instruction into subfields and translate each subfield
     if parser.instruction_type(instruction) == "C-instruction":
         dest = parser.dest(instruction)
@@ -221,7 +233,7 @@ for instruction in instructions:
     # Select file to store binary output
     with Path(argv[2]).open(mode="a", encoding="utf-8") as file:
         file.write(f"{translated_instruction}\n")
-
+'''
     
 
 

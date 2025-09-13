@@ -2,37 +2,30 @@ from sys import argv
 from pathlib import Path
 
 class Parser:
-    innstruction_count = 0
-
     def __init__(self,path):
         self.path = path
 
     def initializer(self):
-        with self.path.open(mode="r", encoding="utf-8") as file:
-            instructions = []
-            # Remove newlines and comments
-            for line in file.readlines():
-                if line != "\n":
-                    line = line.strip()
-                    if line[0] + line [1] != "//":
-                        instructions.append(line)
-            return instructions
-    
-    def has_more_lines(instructions,instruction_count):
-        # Check if there are more instructions in the file
-        if instruction_count < len(instructions):
-            return True
-    def symbol(self,instruction_type):
-        # Return the symbols of A-instructions and Labels
-        if instruction_type == "L-instruction":
-            return instruction.replace('(','').replace(')','')
-        elif instruction_type == "A-instruction":
+        try:
+            with self.path.open(mode="r", encoding="utf-8") as file:
+                instructions = []
+                # Remove newlines and comments
+                for line in file.readlines():
+                    if line != "\n":
+                        line = line.strip()
+                        if line[0] + line [1] != "//":
+                            instructions.append(line)
+        except FileNotFoundError:
+            print("Usage : [command] [assembly file] [hack file]")
+        return instructions
+        
+    def symbol(self,instruction):
+            # Return the symbol part of the A-instruction
             return instruction.replace('@','')
-            
-    def advance(self,instruction_count):
-        # Fetch the next instruction
-        if self.has_more_lines() is True:
-            instruction_count += 1
+    
+    def label(self,instruction):
+        # Return the lable from the L-instruction
+        return instruction.replace('(','').replace(')','')
     
     # Split instructions into A-instructions and C-instructions
     def instruction_type(self,instruction):
@@ -169,10 +162,10 @@ class Code:
 
 
 class SymbolTable:
-    def __init__(self,instruction):
-        self.instruction = instruction
+    def __init__(self):
+        self.table = {}
     
-    def initializer():
+    def initializer(self):
         # Initialize the predefined symbols for the symbol table
         predefined_symbols = {
                                "R0": 0,
@@ -199,21 +192,48 @@ class SymbolTable:
                                "SCREEN": 16384,
                                "KBD": 24576
                               }
-        return predefined_symbols
+        self.table.update(predefined_symbols)
+        
     
+    def contains(self,symbol):
+        # Check if the symbol table contains the specified symbol
+        return symbol in self.table
+    
+    def add_entry(self,address,symbol):
+        # Adds entry to the symbol table
+        self.table[symbol] = address
+        
+
+    def get_address(self,symbol):
+        # Get symbol address from the symbol table
+        return self.table[symbol]
 
         
 # Select file to translate and store instructions
 path = Path(argv[1])
 parser = Parser(path)
 instructions = parser.initializer()
+# First pass
 # iterate over instructions
+instruction_count = -1
+symbol_table = SymbolTable()
+symbol_table.initializer()
 for instruction in instructions:
-    instruction_type = parser.instruction_type(instruction)
-    print(instruction)
-    print(parser.symbol(instruction_type))
-'''
-    # Split C-instruction into subfields and translate each subfield
+    if instruction_count < len(instructions):
+        if parser.instruction_type(instruction) != "L-instruction":
+            instruction_count += 1
+    if parser.instruction_type(instruction) == "L-instruction":
+        label = parser.label(instruction)
+        contains = symbol_table.contains(label)
+        if contains == False:
+            symbol_table.add_entry(instruction_count+1,label)
+# Second pass
+ram = 16 # Initialize ram
+translated_instructions = [] # intialize list to store translated instructions
+for instruction in instructions:
+    if parser.instruction_type(instruction) == "L-instruction":
+        continue
+     # Split C-instruction into subfields and translate each subfield
     if parser.instruction_type(instruction) == "C-instruction":
         dest = parser.dest(instruction)
         comp = parser.comp(instruction)
@@ -223,17 +243,39 @@ for instruction in instructions:
         translated_comp = code.comp()
         translated_jump = code.jump()
         # Assemble translated subfields
-        translated_instruction = "111" + translated_comp + translated_dest + translated_jump
+        translated_instruction = f"111{translated_comp}{translated_dest}{translated_jump}"
     if parser.instruction_type(instruction) == "A-instruction":
         # Translate each A-instruction into its binary value
-        integer = instruction.split('@')[1]
-        binary_representation = f'{int(integer):015b}'
-        translated_instruction = "0" + binary_representation
+        symbol = parser.symbol(instruction)
+        # tranlate the value directly or get the symbols address
+        try:
+            integer = int(symbol)
+        except ValueError:
+            contains = symbol_table.contains(symbol)
+            if contains == False:
+                if ram < 255:
+                    # Add variable symbol to symbol table
+                    symbol_table.add_entry(ram,symbol)
+                    ram += 1
+                else:
+                    print("Variable space exceeded")
+                    exit()
+            # Get variable address
+            integer = symbol_table.get_address(symbol)
+        binary_representation = f'{integer:015b}'
+        translated_instruction = f"0{binary_representation}"
 
-    # Select file to store binary output
-    with Path(argv[2]).open(mode="a", encoding="utf-8") as file:
-        file.write(f"{translated_instruction}\n")
-'''
+    translated_instructions.append(f"{translated_instruction}\n")
+
+# Remove trailing newline
+translated_instructions[-1] = translated_instruction
+# Select file to store binary output
+try:
+    with Path(argv[1]).open(mode="w", encoding="utf-8") as file:
+        file.writelines(translated_instructions)
+except FileNotFoundError:
+    print("Usage : [command] [assembly file] [hack file]")
+
     
 
 

@@ -5,11 +5,12 @@ This project is a Hack assembler written in Python, developed as part of the *Na
 It translates Hack assembly language (`.asm`) programs into Hack machine code (`.hack`), which can be executed on the Hack CPU Emulator.
 
 ## Features
-- Implements a two-pass assembler:
+- Implements a **two-pass assembler**:
   - **First pass**: resolves labels and symbols.  
   - **Second pass**: generates binary machine code.  
 - Supports both **A-instructions** (`@value`) and **C-instructions** (`dest=comp;jump`).  
 - Provides built-in support for all predefined Hack symbols (`SP`, `LCL`, `ARG`, `THIS`, `THAT`, `R0–R15`, `SCREEN`, `KBD`).  
+- Produces `.hack` files compatible with the official Nand2Tetris tools.  
 
 ## Requirements
 - Python 3.8 or higher  
@@ -18,12 +19,12 @@ It translates Hack assembly language (`.asm`) programs into Hack machine code (`
 ## Usage
 1. Clone the repository:
    ```bash
-   git clone https://github.com/Erlk0nig/hack-assembler-python.git
+   git clone git@github.com:yourusername/hack-assembler-python.git
    cd hack-assembler-python
    ```
 2. Run the assembler on an `.asm` file:
    ```bash
-   python main.py Program.asm Program.hack
+   python assembler.py Program.asm
    ```
 3. The assembler will generate:
    ```
@@ -33,7 +34,10 @@ It translates Hack assembly language (`.asm`) programs into Hack machine code (`
 ## Project Structure
 ```
 hack-assembler-python/
-│── main.py       # Assembler implementation
+│── assembler.py     # Entry point of the assembler
+│── parser.py        # Parses Hack assembly instructions
+│── code.py          # Translates mnemonics into binary
+│── symbol_table.py  # Manages symbols and labels
 │── README.md
 ```
 

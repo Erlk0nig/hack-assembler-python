@@ -6,23 +6,26 @@ from pathlib import Path
 
 if __name__ == "__main__":        
     # Select file to translate and store instructions
+    if argv[1].split('.')[-1] != "asm": # Force file to have .asm extension
+        raise Exception ("The input file should have a .asm extension")
     path = Path(argv[1])
     parser = Parser(path)
     instructions = parser.initializer()
     # First pass
     # iterate over instructions
-    instruction_count = -1
+    instruction_count = 0
     symbol_table = SymbolTable()
-    symbol_table.initializer()
+    symbol_table.initializer() 
     for instruction in instructions:
-        if instruction_count < len(instructions):
-            if parser.instruction_type(instruction) != "L-instruction":
-                instruction_count += 1
         if parser.instruction_type(instruction) == "L-instruction":
             label = parser.label(instruction)
             contains = symbol_table.contains(label)
             if contains == False:
-                symbol_table.add_entry(instruction_count+1,label)
+                symbol_table.add_entry(instruction_count,label)
+            # Ignore counting L-instructions
+            continue 
+        if instruction_count < len(instructions):
+            instruction_count += 1
     # Second pass
     ram = 16 # Initialize ram
     translated_instructions = [] # intialize list to store translated instructions
@@ -49,13 +52,9 @@ if __name__ == "__main__":
             except ValueError:
                 contains = symbol_table.contains(symbol)
                 if contains == False:
-                    if ram < 256:
-                        # Add variable symbol to symbol table
-                        symbol_table.add_entry(ram,symbol)
-                        ram += 1
-                    else:
-                        print("Variable space exceeded")
-                        exit()
+                    # Add variable symbol to symbol table
+                    symbol_table.add_entry(ram,symbol)
+                    ram += 1
                 # Get variable address
                 integer = symbol_table.get_address(symbol)
             binary_representation = f'{integer:015b}'
@@ -72,6 +71,9 @@ if __name__ == "__main__":
         output_file = f"{argv[1].split('.')[0]}.hack"
     with Path(output_file).open(mode="w", encoding="utf-8") as file:
         file.writelines(translated_instructions)
+
+
+    
 
 
     
